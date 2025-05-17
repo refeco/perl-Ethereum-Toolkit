@@ -16,51 +16,29 @@ Blockchain::Ethereum::Toolkit - A low-level Ethereum toolkit in Perl
 
 A low-level Ethereum toolkit written in Perl, combining core utilities for working with Ethereum's internal data structures.
 
-This distribution merges the functionality of the following previously separate modules:
+This distribution merges the functionality of previously separate modules into a single toolkit, including:
 
 =over 4
 
 =item *
 
-L<https://metacpan.org/dist/Blockchain-Ethereum-ABI>
+ABI encoding and decoding
 
 =item *
 
-L<https://metacpan.org/dist/Blockchain-Ethereum-RLP>
+RLP serialization
 
 =item *
 
-L<https://metacpan.org/dist/Blockchain-Ethereum-Transaction>
+Transaction creation and signing
 
 =item *
 
-L<https://metacpan.org/dist/Blockchain-Ethereum-Keystore>
+Keystore encryption and decryption
 
 =back
 
 These modules are now bundled together in a single distribution to simplify usage, packaging, and long-term maintenance.
-
-=head1 INCLUDED MODULES
-
-=over 4
-
-=item *
-
-L<Blockchain::Ethereum::ABI> — Encode/decode Ethereum ABI function signatures and parameters.
-
-=item *
-
-L<Blockchain::Ethereum::RLP> — Recursive Length Prefix (RLP) encoding and decoding implementation.
-
-=item *
-
-L<Blockchain::Ethereum::Transaction> — Create, serialize, and sign Ethereum transactions (Legacy and EIP-155).
-
-=item *
-
-L<Blockchain::Ethereum::Keystore> — Load and decrypt Ethereum V3 JSON keystore files.
-
-=back
 
 =head1 INSTALLATION
 
