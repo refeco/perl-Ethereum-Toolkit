@@ -10,10 +10,10 @@ my %WriteMakefileArgs = (
     "ABSTRACT"           => "A Ethereum toolkit in Perl",
     "AUTHOR"             => "REFECO <refeco\@cpan.org>",
     "CONFIGURE_REQUIRES" => {"ExtUtils::MakeMaker" => 0},
-    "DISTNAME"           => "perl-Ethereum-Toolkit",
+    "DISTNAME"           => "Blockchain-Ethereum",
     "LICENSE"            => "mit",
     "MIN_PERL_VERSION"   => "5.026000",
-    "NAME"               => "perl::Ethereum::Toolkit",
+    "NAME"               => "Blockchain::Ethereum",
     "PREREQ_PM"          => {
         "Bitcoin::Crypto"          => "2.001",
         "Crypt::Digest::Keccak256" => "0.078",
@@ -35,7 +35,7 @@ my %WriteMakefileArgs = (
         "Test::Fatal"     => "0.017",
         "Test::More"      => "0.94"
     },
-    "VERSION" => "0.001",
+    "VERSION" => "0.019",
     "test"    => {"TESTS" => "t/*.t t/ABI/*.t t/Keystore/*.t t/RLP/*.t t/Transaction/*.t"});
 
 my %FallbackPrereqs = (

@@ -1,6 +1,6 @@
-This is the Perl distribution perl-Ethereum-Toolkit.
+This is the Perl distribution Blockchain-Ethereum.
 
-Installing perl-Ethereum-Toolkit is straightforward.
+Installing Blockchain-Ethereum is straightforward.
 
 ## Installation with cpanm
 
@@ -66,7 +66,7 @@ They can all be found in the "PHASE_requires" key of MYMETA.yml or the
 
 ## Documentation
 
-perl-Ethereum-Toolkit documentation is available as POD.
+Blockchain-Ethereum documentation is available as POD.
 You can run `perldoc` from a shell to read the documentation:
 
     % perldoc Blockchain::Ethereum
