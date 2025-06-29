@@ -7,7 +7,7 @@ use 5.026000;
 use ExtUtils::MakeMaker;
 
 my %WriteMakefileArgs = (
-    "ABSTRACT"           => "A low-level Ethereum toolkit in Perl",
+    "ABSTRACT"           => "A Ethereum toolkit in Perl",
     "AUTHOR"             => "REFECO <refeco\@cpan.org>",
     "CONFIGURE_REQUIRES" => {"ExtUtils::MakeMaker" => 0},
     "DISTNAME"           => "perl-Ethereum-Toolkit",

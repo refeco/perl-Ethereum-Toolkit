@@ -4,17 +4,17 @@ use v5.26;
 use strict;
 use warnings;
 
-# ABSTRACT: A low-level Ethereum toolkit in Perl
+# ABSTRACT: A Ethereum toolkit in Perl
 # AUTHORITY
 # VERSION
 
 =head1 NAME
 
-Blockchain::Ethereum::Toolkit - A low-level Ethereum toolkit in Perl
+Blockchain::Ethereum::Toolkit - A Ethereum toolkit in Perl
 
 =head1 DESCRIPTION
 
-A low-level Ethereum toolkit written in Perl, combining core utilities for working with Ethereum's internal data structures.
+A Ethereum toolkit written in Perl, combining core utilities for working with Ethereum's internal data structures.
 
 This distribution merges the functionality of previously separate modules into a single toolkit, including:
 

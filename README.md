@@ -1,6 +1,6 @@
 # NAME
 
-Blockchain::Ethereum - A low-level Ethereum toolkit in Perl
+Blockchain::Ethereum - A Ethereum toolkit in Perl
 
 # VERSION
 
@@ -8,7 +8,7 @@ version 0.001
 
 # DESCRIPTION
 
-A low-level Ethereum toolkit written in Perl, combining core utilities for working with Ethereum's internal data structures.
+A Ethereum toolkit written in Perl, combining core utilities for working with Ethereum's internal data structures.
 
 This distribution merges the functionality of previously separate modules into a single toolkit, including:
 
@@ -21,7 +21,7 @@ These modules are now bundled together in a single distribution to simplify usag
 
 # NAME
 
-Blockchain::Ethereum::Toolkit - A low-level Ethereum toolkit in Perl
+Blockchain::Ethereum::Toolkit - A Ethereum toolkit in Perl
 
 # INSTALLATION
 
