@@ -10,7 +10,7 @@ on:
 
 jobs:
   linux:
-    runs-on: debian-latest
+    runs-on: ubuntu-latest
 
     strategy:
       fail-fast: false
