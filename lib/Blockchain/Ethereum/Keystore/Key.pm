@@ -34,6 +34,7 @@ use Crypt::Perl::ECDSA::Parse;
 use Crypt::Perl::ECDSA::Utils;
 use Crypt::Digest::Keccak256 qw(keccak256);
 use Crypt::PRNG              qw(random_bytes);
+use Scalar::Util            qw(blessed);
 
 use Blockchain::Ethereum::Keystore::Key::PKUtil;
 use Blockchain::Ethereum::Keystore::Address;
@@ -96,7 +97,7 @@ sub sign_transaction {
     my ($self, $transaction) = @_;
 
     croak "transaction must be a reference of Blockchain::Ethereum::Transaction"
-        unless ref($transaction) =~ /^\QBlockchain::Ethereum::Transaction/;
+        unless blessed $transaction && $transaction->isa('Blockchain::Ethereum::Transaction');
 
     # _sign is overriden by Blockchain::ethereum::Keystore::Key::PKUtil
     # to include the y_parity as part of the response

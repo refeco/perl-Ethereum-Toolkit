@@ -1,5 +1,9 @@
 {{$NEXT}}
-
+    [Improvements]
+    - Remove Test::Fatal from test dependencies
+    - Dist::Zilla bundle updated
+    [BugFixes]
+    - Fix type check in sign_transaction
 0.019     2025-06-28 23:31:03-03:00 America/Sao_Paulo
 - Initial release of Blockchain-Ethereum toolkit as a unified distribution
 - Includes functionality from the following previously separate modules:
