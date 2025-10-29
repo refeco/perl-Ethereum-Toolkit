@@ -22,6 +22,7 @@ on 'test' => sub {
 
 on 'configure' => sub {
   requires "ExtUtils::MakeMaker" => "0";
+  requires "perl" => "v5.26.0";
 };
 
 on 'develop' => sub {
