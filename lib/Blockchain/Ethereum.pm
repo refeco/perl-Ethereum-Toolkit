@@ -52,30 +52,6 @@ Or install manually:
   cd perl-Ethereum-Toolkit
   dzil install
 
-=head1 MAINTENANCE STATUS
-
-This toolkit is feature-complete and currently not under active development.
-
-However:
-
-=over 4
-
-=item *
-
-Pull requests are welcome
-
-=item *
-
-Bug reports will be reviewed
-
-=item *
-
-I may occasionally address issues
-
-=back
-
-If you use this project and want to contribute improvements or features, feel free to open a pull request.
-
 =head1 LICENSE
 
 This library is free software; you can redistribute it and/or modify
