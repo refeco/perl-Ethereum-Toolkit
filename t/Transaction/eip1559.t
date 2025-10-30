@@ -7,6 +7,8 @@ use Test::More;
 use Blockchain::Ethereum::Transaction::EIP1559;
 use Blockchain::Ethereum::Keystore::Key;
 
+# These tests are based on the result of running the same transactions over ethers.js
+
 subtest "contract deployment => remix storage contract" => sub {
     # storage contract from remix
     my $compiled_contract =
@@ -73,6 +75,65 @@ subtest "eth transfer" => sub {
 
     is hex $decoded->[-3], 0, 'correct eip155 v value for contract creation transaction';
 
+};
+
+subtest 'with access list' => sub {
+    my $transaction = Blockchain::Ethereum::Transaction::EIP1559->new(
+        chain_id                 => '0x539',
+        nonce                    => '0x0',
+        max_priority_fee_per_gas => '0x77359400',
+        max_fee_per_gas          => '0x4A817C800',
+        gas_limit                => '0xC350',
+        to                       => '0x1234567890123456789012345678901234567890',
+        value                    => '0x6F05B59D3B20000',
+        data                     => '0xdeadbeef',
+        access_list              => [{
+                address      => '0x1234567890123456789012345678901234567890',
+                storage_keys => [
+                    '0x0000000000000000000000000000000000000000000000000000000000000001',
+                    '0x0000000000000000000000000000000000000000000000000000000000000002'
+                ]
+            },
+            {
+                address      => '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd',
+                storage_keys => ['0x0000000000000000000000000000000000000000000000000000000000000003']}
+        ],
+    );
+
+    my $key = Blockchain::Ethereum::Keystore::Key->new(
+        private_key => pack "H*",
+        '4646464646464646464646464646464646464646464646464646464646464646'
+    );
+
+    $key->sign_transaction($transaction);
+
+    my $raw_transaction = $transaction->serialize;
+
+    is(unpack("H*", $raw_transaction),
+        '02f9010d8205398084773594008504a817c80082c3509412345678901234567890123456789012345678908806f05b59d3b2000084deadbeeff893f859941234567890123456789012345678901234567890f842a00000000000000000000000000000000000000000000000000000000000000001a00000000000000000000000000000000000000000000000000000000000000002f794abcdefabcdefabcdefabcdefabcdefabcdefabcde1a0000000000000000000000000000000000000000000000000000000000000000380a0541c531e3c2b660d47f2bc3a7cc3094ee62cda8211f618545636460291b1948da06eca109f71ee2ccff5272532da31be703089caabd70750e34a1c7f99d9511dce'
+    );
+};
+
+subtest 'access list encoding' => sub {
+    my $tx = Blockchain::Ethereum::Transaction::EIP1559->new(
+        nonce                    => '0x0',
+        max_fee_per_gas          => '0x9',
+        max_priority_fee_per_gas => '0x0',
+        gas_limit                => '0x1DE2B9',
+        to                       => '0x3535353535353535353535353535353535353535',
+        value                    => '0xDE0B6B3A7640000',
+        data                     => '0x',
+        chain_id                 => '0x539',
+        access_list              => [{
+                address      => '0x1234567890123456789012345678901234567890',
+                storage_keys => ['0x0000000000000000000000000000000000000000000000000000000000000001']}
+        ],
+    );
+
+    my $encoded  = $tx->_encode_access_list;
+    my $expected = [['0x1234567890123456789012345678901234567890', ['0x0000000000000000000000000000000000000000000000000000000000000001']]];
+
+    is_deeply($encoded, $expected, 'correct access list encoding');
 };
 
 done_testing;

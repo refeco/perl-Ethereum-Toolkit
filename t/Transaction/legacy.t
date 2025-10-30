@@ -7,6 +7,8 @@ use Test::More;
 use Blockchain::Ethereum::Transaction::Legacy;
 use Blockchain::Ethereum::Keystore::Key;
 
+# These tests are based on the result of running the same transactions over ethers.js
+
 subtest "eip-155 example" => sub {
     my $transaction = Blockchain::Ethereum::Transaction::Legacy->new(
         nonce     => '0x9',

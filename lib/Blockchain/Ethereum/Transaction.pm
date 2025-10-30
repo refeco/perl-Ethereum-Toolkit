@@ -24,7 +24,6 @@ Ethereum transaction abstraction for signing and generating raw transactions
         chain_id                 => '0x539'
     );
 
-    # github.com/refeco/perl-ethereum-keystore
     my $key = Blockchain::Ethereum::Keystore::Key->new(
         private_key => pack "H*",
         '4646464646464646464646464646464646464646464646464646464646464646'
@@ -42,6 +41,8 @@ Supported transaction types:
 
 =item * B<Legacy>
 
+=item * B<EIP2930 Access List>
+
 =item * B<EIP1559 Fee Market>
 
 =back
@@ -50,6 +51,7 @@ Supported transaction types:
 
 use Carp;
 use Crypt::Digest::Keccak256 qw(keccak256);
+use Scalar::Util             qw(blessed);
 
 use Blockchain::Ethereum::RLP;
 
@@ -139,24 +141,6 @@ sub serialize {
     croak "serialize method not implemented";
 }
 
-=method generate_v
-
-Generate the transaction v field using the given y-parity
-
-=over 4
-
-=item * C<$y_parity> y-parity
-
-=back
-
-Returns the v hexadecimal value also sets the v fields from transaction
-
-=cut
-
-sub generate_v {
-    croak "generate_v method not implemented";
-}
-
 =method hash
 
 SHA3 Hash the serialized transaction object
@@ -179,7 +163,62 @@ sub hash {
 sub _equalize_params {
     my ($self, $params) = @_;
 
-    return [map { ref $_ eq 'Math::BigInt' ? $_->as_hex : $_ } $params->@*];
+    return [map { blessed $_ && $_->isa('Math::BigInt') ? $_->as_hex : $_ } $params->@*];
+}
+
+=method _encode_access_list
+
+Internal method to encode the access list for RLP serialization
+
+=over 4
+
+=back
+
+Returns the properly formatted access list for RLP encoding
+
+=cut
+
+sub _encode_access_list {
+    my $self = shift;
+
+    my $access_list = $self->access_list();
+
+    # If no access list, return empty array
+    return [] unless @$access_list;
+
+    my @encoded_list;
+
+    for my $entry (@$access_list) {
+        my $address      = $entry->{address}      // '';
+        my $storage_keys = $entry->{storage_keys} // [];
+
+        push @encoded_list, [$address, $storage_keys];
+    }
+
+    return \@encoded_list;
+}
+
+=method generate_v
+
+Generate the transaction v field using the given y-parity
+
+=over 4
+
+=item * C<$y_parity> y-parity
+
+=back
+
+Returns the v hexadecimal value also sets the v fields from transaction
+
+=cut
+
+sub generate_v {
+    my ($self, $y_parity) = @_;
+
+    # eip-1559 and eip-2930 uses y-parity directly as the v value
+    my $v = sprintf("0x%x", $y_parity);
+    $self->set_v($v);
+    return $v;
 }
 
 1;
