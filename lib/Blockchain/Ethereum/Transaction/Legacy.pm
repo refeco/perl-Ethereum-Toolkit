@@ -20,7 +20,6 @@ Transaction abstraction for Legacy transactions
         value     => '0xDE0B6B3A7640000',
         chain_id  => '0x1'
 
-    # github.com/refeco/perl-ethereum-keystore
     my $key = Blockchain::Ethereum::Keystore::Key->new(
         private_key => pack "H*",
         '4646464646464646464646464646464646464646464646464646464646464646'

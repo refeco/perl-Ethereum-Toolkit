@@ -34,7 +34,7 @@ use Crypt::Perl::ECDSA::Parse;
 use Crypt::Perl::ECDSA::Utils;
 use Crypt::Digest::Keccak256 qw(keccak256);
 use Crypt::PRNG              qw(random_bytes);
-use Scalar::Util            qw(blessed);
+use Scalar::Util             qw(blessed);
 
 use Blockchain::Ethereum::Keystore::Key::PKUtil;
 use Blockchain::Ethereum::Keystore::Address;
