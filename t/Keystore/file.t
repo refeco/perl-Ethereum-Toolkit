@@ -18,7 +18,7 @@ subtest "from_file - v3 pbkdf2" => sub {
     my $keyfile = Blockchain::Ethereum::Keystore::File->from_file("./t/Keystore/resources/pbkdf2_v3.json", $password);
 
     isa_ok $keyfile,              'Blockchain::Ethereum::Keystore::File';
-    isa_ok $keyfile->private_key, 'Blockchain::Ethereum::Keystore::Key';
+    isa_ok $keyfile->private_key, 'Blockchain::Ethereum::Key';
     is $keyfile->private_key->export, $private_key_bytes, 'private key matches';
     is $keyfile->password,            $password,          'password stored correctly';
 
@@ -43,7 +43,7 @@ subtest "from_file - v3 scrypt" => sub {
     my $keyfile = Blockchain::Ethereum::Keystore::File->from_file("./t/Keystore/resources/scrypt_v3.json", $password);
 
     isa_ok $keyfile,              'Blockchain::Ethereum::Keystore::File';
-    isa_ok $keyfile->private_key, 'Blockchain::Ethereum::Keystore::Key';
+    isa_ok $keyfile->private_key, 'Blockchain::Ethereum::Key';
     is $keyfile->private_key->export, $private_key_bytes, 'private key matches';
     is $keyfile->password,            $password,          'password stored correctly';
 
@@ -66,7 +66,7 @@ subtest "from_file - v3 scrypt" => sub {
 };
 
 subtest "lazy initialization" => sub {
-    my $key     = Blockchain::Ethereum::Keystore::Key->new(private_key => $private_key_bytes);
+    my $key     = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
     my $keyfile = Blockchain::Ethereum::Keystore::File->new(
         private_key => $key,
         password    => $password
@@ -82,7 +82,7 @@ subtest "lazy initialization" => sub {
 };
 
 subtest "write_to_file - basic" => sub {
-    my $key     = Blockchain::Ethereum::Keystore::Key->new(private_key => $private_key_bytes);
+    my $key     = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
     my $keyfile = Blockchain::Ethereum::Keystore::File->new(
         private_key => $key,
         password    => $password
@@ -103,7 +103,7 @@ subtest "write_to_file - basic" => sub {
 };
 
 subtest "write_to_file - password change" => sub {
-    my $key     = Blockchain::Ethereum::Keystore::Key->new(private_key => $private_key_bytes);
+    my $key     = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
     my $keyfile = Blockchain::Ethereum::Keystore::File->new(
         private_key => $key,
         password    => $password
@@ -146,12 +146,12 @@ subtest "error conditions - constructor" => sub {
     eval { Blockchain::Ethereum::Keystore::File->new(password => $password) };
     like $@, qr/Missing required parameter/, 'constructor requires private_key';
 
-    my $key = Blockchain::Ethereum::Keystore::Key->new(private_key => $private_key_bytes);
+    my $key = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
     eval { Blockchain::Ethereum::Keystore::File->new(private_key => $key) };
     like $@, qr/Missing required parameter/, 'constructor requires password';
 
     eval { Blockchain::Ethereum::Keystore::File->new(private_key => "not_a_key_object", password => $password) };
-    like $@, qr/must be a Blockchain::Ethereum::Keystore::Key instance/, 'validates private_key type';
+    like $@, qr/must be a Blockchain::Ethereum::Key instance/, 'validates private_key type';
 };
 
 subtest "error conditions - from_file" => sub {
@@ -170,7 +170,7 @@ subtest "MAC verification" => sub {
     ok 1, 'MAC verification passed during from_file';
 
     # Test that MAC is properly generated for new keystores
-    my $key         = Blockchain::Ethereum::Keystore::Key->new(private_key => $private_key_bytes);
+    my $key         = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
     my $new_keyfile = Blockchain::Ethereum::Keystore::File->new(
         private_key => $key,
         password    => $password
@@ -181,7 +181,7 @@ subtest "MAC verification" => sub {
 };
 
 subtest "keystore format compliance" => sub {
-    my $key     = Blockchain::Ethereum::Keystore::Key->new(private_key => $private_key_bytes);
+    my $key     = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
     my $keyfile = Blockchain::Ethereum::Keystore::File->new(
         private_key => $key,
         password    => $password

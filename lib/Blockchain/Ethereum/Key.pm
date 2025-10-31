@@ -36,8 +36,8 @@ use Crypt::Digest::Keccak256 qw(keccak256);
 use Crypt::PRNG              qw(random_bytes);
 use Scalar::Util             qw(blessed);
 
-use Blockchain::Ethereum::Keystore::Key::PKUtil;
-use Blockchain::Ethereum::Keystore::Address;
+use Blockchain::Ethereum::Key::PKUtil;
+use Blockchain::Ethereum::Address;
 
 sub new {
     my ($class, %params) = @_;
@@ -54,7 +54,7 @@ sub new {
 
     # Crypt::PK::ECC does not provide support for deterministic keys
     $self->{ecc_handler} = bless Crypt::Perl::ECDSA::Parse::private($importer->export_key_der('private')),
-        'Blockchain::Ethereum::Keystore::Key::PKUtil';
+        'Blockchain::Ethereum::Key::PKUtil';
 
     return $self;
 }
@@ -99,7 +99,7 @@ sub sign_transaction {
     croak "transaction must be a reference of Blockchain::Ethereum::Transaction"
         unless blessed $transaction && $transaction->isa('Blockchain::Ethereum::Transaction');
 
-    # _sign is overriden by Blockchain::ethereum::Keystore::Key::PKUtil
+    # _sign is overriden by Blockchain::Ethereum::Key::PKUtil
     # to include the y_parity as part of the response
     my ($r, $s, $y_parity) = $self->_ecc_handler->_sign($transaction->hash);
 
@@ -112,13 +112,13 @@ sub sign_transaction {
 
 =method address
 
-Export the L<Blockchain::Ethereum::Keystore::Address> from the imported/generated private key
+Export the L<Blockchain::Ethereum::Address> from the imported/generated private key
 
 =over 4
 
 =back
 
-L<Blockchain::Ethereum::Keystore::Address>
+L<Blockchain::Ethereum::Address>
 
 =cut
 
@@ -131,7 +131,7 @@ sub address {
     my $address     = substr(keccak256($x . $y), -20);
     my $hex_address = unpack("H*", $address);
 
-    return Blockchain::Ethereum::Keystore::Address->new(address => "0x$hex_address");
+    return Blockchain::Ethereum::Address->new(address => "0x$hex_address");
 }
 
 =method export

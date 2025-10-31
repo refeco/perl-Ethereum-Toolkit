@@ -70,7 +70,7 @@ use Crypt::Digest::Keccak256 qw(keccak256);
 use Scalar::Util             qw(blessed);
 use Data::UUID;
 
-use Blockchain::Ethereum::Keystore::Key;
+use Blockchain::Ethereum::Key;
 use Blockchain::Ethereum::Keystore::KDF;
 
 my $json = JSON::MaybeXS->new(
@@ -86,8 +86,8 @@ sub new {
     for (qw(private_key password)) {
         croak "Missing required parameter $_" unless defined $params{$_};
 
-        croak 'private_key must be a Blockchain::Ethereum::Keystore::Key instance'
-            if ($_ eq 'private_key' && !(blessed $params{$_} && $params{$_}->isa('Blockchain::Ethereum::Keystore::Key')));
+        croak 'private_key must be a Blockchain::Ethereum::Key instance'
+            if ($_ eq 'private_key' && !(blessed $params{$_} && $params{$_}->isa('Blockchain::Ethereum::Key')));
 
         $self->{$_} = $params{$_} if exists $params{$_};
     }
@@ -236,7 +236,7 @@ sub _generate_private_key {
 
     my $key = $cipher->decrypt(pack("H*", $self->ciphertext));
 
-    return Blockchain::Ethereum::Keystore::Key->new(private_key => $key);
+    return Blockchain::Ethereum::Key->new(private_key => $key);
 }
 
 sub _generate_random_iv {

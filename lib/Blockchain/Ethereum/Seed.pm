@@ -35,7 +35,7 @@ use Carp;
 use Crypt::PRNG     qw(random_bytes);
 use Bitcoin::Crypto qw(btc_extprv);
 
-use Blockchain::Ethereum::Keystore::Key;
+use Blockchain::Ethereum::Key;
 
 sub new {
     my ($class, %params) = @_;
@@ -78,7 +78,7 @@ sub _hdw_handler {
 
 =method deriv_key
 
-Derivates a L<Blockchain::Ethereum::Keystore::Key> for the given index
+Derivates a L<Blockchain::Ethereum::Key> for the given index
 
 =over 4
 
@@ -92,7 +92,7 @@ Derivates a L<Blockchain::Ethereum::Keystore::Key> for the given index
 
 =back
 
-L<Blockchain::Ethereum::Keystore::Key>
+L<Blockchain::Ethereum::Key>
 
 =cut
 
@@ -112,7 +112,7 @@ sub derive_key {
         change    => $change,
     );
 
-    return Blockchain::Ethereum::Keystore::Key->new(private_key => $self->_hdw_handler->derive_key($path)->get_basic_key->to_serialized);
+    return Blockchain::Ethereum::Key->new(private_key => $self->_hdw_handler->derive_key($path)->get_basic_key->to_serialized);
 }
 
 1;
