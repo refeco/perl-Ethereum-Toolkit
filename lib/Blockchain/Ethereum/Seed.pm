@@ -1,4 +1,4 @@
-package Blockchain::Ethereum::Keystore::Seed;
+package Blockchain::Ethereum::Seed;
 
 use v5.26;
 use strict;
@@ -17,7 +17,7 @@ If instantiated without a seed or mnemonic, this module uses L<Crypt::PRNG> for 
 Creating a new seed and derivating the key from it:
 
     my $seed = Blockchain::Ethereum::Seed->new;
-    my $key = $seed->deriv_key(2); # Blockchain::Ethereum::Keystore::Key
+    my $key = $seed->deriv_key(2); # Blockchain::Ethereum::Key
     print $key->address;
 
 Importing a mnemonic:

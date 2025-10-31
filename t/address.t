@@ -4,7 +4,7 @@ use strict;
 use warnings;
 
 use Test::More;
-use Blockchain::Ethereum::Keystore::Address;
+use Blockchain::Ethereum::Address;
 
 subtest 'checksum' => sub {
     my @checksummed_addresses = (
@@ -16,7 +16,7 @@ subtest 'checksum' => sub {
     );
 
     for my $address (@checksummed_addresses) {
-        my $checksummed = Blockchain::Ethereum::Keystore::Address->new(address => lc $address);
+        my $checksummed = Blockchain::Ethereum::Address->new(address => lc $address);
         is $checksummed,            $address,             "valid address checksum for " . $checksummed;
         is $checksummed->no_prefix, $address =~ s/^0x//r, "valid address checksum for " . $checksummed->no_prefix;
     }

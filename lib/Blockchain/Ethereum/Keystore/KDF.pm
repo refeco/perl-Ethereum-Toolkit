@@ -1,4 +1,4 @@
-package Blockchain::Ethereum::Keystore::Keyfile::KDF;
+package Blockchain::Ethereum::Keystore::KDF;
 
 use v5.26;
 use strict;

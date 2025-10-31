@@ -1,4 +1,4 @@
-package Blockchain::Ethereum::Keystore::Key;
+package Blockchain::Ethereum::Key;
 
 use v5.26;
 use strict;
