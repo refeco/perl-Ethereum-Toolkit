@@ -1,4 +1,4 @@
-package Blockchain::Ethereum::Keystore::Keyfile;
+package Blockchain::Ethereum::Keystore::File;
 
 use v5.26;
 use strict;
@@ -10,15 +10,15 @@ use warnings;
 
 =head1 SYNOPSIS
 
-    use Blockchain::Ethereum::Keystore::Keyfile;
-    use Blockchain::Ethereum::Keystore::Key;
+    use Blockchain::Ethereum::Keystore::File;
+    use Blockchain::Ethereum::Key;
 
     # Create a new keystore from a private key
-    my $private_key = Blockchain::Ethereum::Keystore::Key->new(
+    my $private_key = Blockchain::Ethereum::Key->new(
         private_key => $key_bytes
     );
     
-    my $keystore = Blockchain::Ethereum::Keystore::Keyfile->new(
+    my $keystore = Blockchain::Ethereum::Keystore::File->new(
         private_key => $private_key,
         password    => 'my_secure_password'
     );
@@ -27,7 +27,7 @@ use warnings;
     $keystore->write_to_file('/path/to/keystore.json');
 
     # Load from existing keystore file
-    my $loaded = Blockchain::Ethereum::Keystore::Keyfile->from_file(
+    my $loaded = Blockchain::Ethereum::Keystore::File->from_file(
         '/path/to/keystore.json', 
         'my_secure_password'
     );
@@ -70,8 +70,8 @@ use Crypt::Digest::Keccak256 qw(keccak256);
 use Scalar::Util             qw(blessed);
 use Data::UUID;
 
-use Blockchain::Ethereum::Keystore::Key;
-use Blockchain::Ethereum::Keystore::Keyfile::KDF;
+use Blockchain::Ethereum::Key;
+use Blockchain::Ethereum::Keystore::KDF;
 
 my $json = JSON::MaybeXS->new(
     utf8      => 1,
@@ -86,8 +86,8 @@ sub new {
     for (qw(private_key password)) {
         croak "Missing required parameter $_" unless defined $params{$_};
 
-        croak 'private_key must be a Blockchain::Ethereum::Keystore::Key instance'
-            if ($_ eq 'private_key' && !(blessed $params{$_} && $params{$_}->isa('Blockchain::Ethereum::Keystore::Key')));
+        croak 'private_key must be a Blockchain::Ethereum::Key instance'
+            if ($_ eq 'private_key' && !(blessed $params{$_} && $params{$_}->isa('Blockchain::Ethereum::Key')));
 
         $self->{$_} = $params{$_} if exists $params{$_};
     }
@@ -101,7 +101,7 @@ sub new {
 
 Load a keystore from an existing file.
 
-    my $keystore = Blockchain::Ethereum::Keystore::Keyfile->from_file(
+    my $keystore = Blockchain::Ethereum::Keystore::File->from_file(
         '/path/to/keystore.json',
         'password'
     );
@@ -188,7 +188,7 @@ sub _from_v3 {
 
     my $header = $crypto->{kdfparams};
 
-    $self->{kdf} = Blockchain::Ethereum::Keystore::Keyfile::KDF->new(
+    $self->{kdf} = Blockchain::Ethereum::Keystore::KDF->new(
         algorithm => $crypto->{kdf},     #
         dklen     => $header->{dklen},
         n         => $header->{n},
@@ -236,7 +236,7 @@ sub _generate_private_key {
 
     my $key = $cipher->decrypt(pack("H*", $self->ciphertext));
 
-    return Blockchain::Ethereum::Keystore::Key->new(private_key => $key);
+    return Blockchain::Ethereum::Key->new(private_key => $key);
 }
 
 sub _generate_random_iv {
@@ -248,7 +248,7 @@ sub _generate_kdf {
     my ($self) = @_;
 
     my ($derived_key, $salt, $N, $r, $p) = Crypt::ScryptKDF::_scrypt_extra($self->password);
-    return Blockchain::Ethereum::Keystore::Keyfile::KDF->new(
+    return Blockchain::Ethereum::Keystore::KDF->new(
         algorithm => 'scrypt',
         dklen     => length $derived_key,
         n         => $N,

@@ -1,4 +1,4 @@
-package Blockchain::Ethereum::Keystore::Address;
+package Blockchain::Ethereum::Address;
 
 use v5.26;
 use strict;

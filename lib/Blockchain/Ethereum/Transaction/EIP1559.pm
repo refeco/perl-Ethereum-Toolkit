@@ -32,7 +32,7 @@ Transaction abstraction for EIP-1559 Fee Market transactions
         ]
     );
 
-    my $key = Blockchain::Ethereum::Keystore::Key->new(
+    my $key = Blockchain::Ethereum::Key->new(
         private_key => pack "H*",
         '4646464646464646464646464646464646464646464646464646464646464646'
     );

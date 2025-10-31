@@ -23,7 +23,7 @@ Ethereum transaction abstraction for signing and generating raw transactions
         chain_id                 => '0x539'
     );
 
-    my $key = Blockchain::Ethereum::Keystore::Key->new(
+    my $key = Blockchain::Ethereum::Key->new(
         private_key => pack "H*",
         '4646464646464646464646464646464646464646464646464646464646464646'
     );

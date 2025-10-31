@@ -1,4 +1,4 @@
-package Blockchain::Ethereum::Keystore::Key::PKUtil;
+package Blockchain::Ethereum::Key::PKUtil;
 
 use v5.26;
 use strict;
@@ -14,7 +14,7 @@ the function _sign that on the parent module returns only C<$r> and C<$s>,
 this version returns the C<$y_parity> as well, what simplifies signing
 the transaction.
 
-You don't want to use this directly, use instead L<Blockchain::Ethereum::Keystore::Key>
+You don't want to use this directly, use instead L<Blockchain::Ethereum::Key>
 
 =cut;
 

@@ -30,10 +30,10 @@ Core functionalities:
 
 Generating a new address and writing it to a keyfile:
 
-    my $key = Blockchain::Ethereum::Keystore::Key->new;
+    my $key = Blockchain::Ethereum::Key->new;
     # checksummed address
     print $key->address;
-    my $keyfile = Blockchain::ethereum::Keystore::Keyfile->new;
+    my $keyfile = Blockchain::Ethereum::Keyfile->new;
 
     $keyfile->import_key($key);
     $keyfile->write_to_file("...");
@@ -48,7 +48,7 @@ Generating a new seed and derivating new keys (BIP44):
 
 Importing a keyfile and changing the password:
 
-    my $keyfile = Blockchain::Ethereum::Keystore::Keyfile->new;
+    my $keyfile = Blockchain::Ethereum::Keyfile->new;
     my $password = "old_password";
     $keyfile->import_file("...", $password);
     $keyfile->change_password($password, "new_password");
@@ -60,13 +60,13 @@ Signing a transaction:
         ...
     );
 
-    my $keyfile = Blockchain::Ethereum::Keystore::Keyfile->new;
+    my $keyfile = Blockchain::Ethereum::Keyfile->new;
     $keyfile->import_file("...");
     $keyfile->private_key->sign_transaction($transaction);
 
 Export private key:
 
-    my $keyfile = Blockchain::Ethereum::Keystore::Keyfile->new;
+    my $keyfile = Blockchain::Ethereum::Keyfile->new;
     $keyfile->import_file("...");
 
     # private key bytes

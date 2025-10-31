@@ -1,15 +1,15 @@
 use strict;
 use warnings;
 
-use Blockchain::Ethereum::Keystore::Key;
+use Blockchain::Ethereum::Key;
 use Blockchain::Ethereum::Keystore::Seed;
 
 # generating a new address
-my $key = Blockchain::Ethereum::Keystore::Key->new();
+my $key = Blockchain::Ethereum::Key->new();
 printf "%s\n", $key->address;
 
 # importing private key
-$key = Blockchain::Ethereum::Keystore::Key->new(
+$key = Blockchain::Ethereum::Key->new(
     private_key => pack "H*",
     '4646464646464646464646464646464646464646464646464646464646464646'
 );
