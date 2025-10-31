@@ -1,4 +1,4 @@
-{{$NEXT}}
+0.020     2025-10-30 23:35:49-03:00 America/Sao_Paulo
     [Improvements]
     - Added EIP-2930 transaction support
     - Added Unit conversion functions parse_units and format_units
