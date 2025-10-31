@@ -1,3 +1,9 @@
+{{$NEXT}}
+    [Improvements]
+    - [BREAKING] Moved import_file to from_file as class constructor on Keyfile
+    - [BREAKING] Keyfile constructor now requires private_key and password parameters
+    - write_to_file now accepts optional password parameter for password changes
+    - Fixed MAC verification and key derivation vulnerabilities
 0.020     2025-10-30 23:35:49-03:00 America/Sao_Paulo
     [Improvements]
     - Added EIP-2930 transaction support

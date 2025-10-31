@@ -51,6 +51,7 @@ Supported transaction types:
 use Carp;
 use Crypt::Digest::Keccak256 qw(keccak256);
 use Scalar::Util             qw(blessed looks_like_number);
+use Math::BigInt;
 
 use Blockchain::Ethereum::RLP;
 
