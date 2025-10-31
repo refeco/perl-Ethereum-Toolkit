@@ -6,6 +6,7 @@ use warnings;
 use Test::More;
 use Blockchain::Ethereum::Transaction::EIP2930;
 use Blockchain::Ethereum::Keystore::Key;
+use Blockchain::Ethereum::Utils;
 
 # These tests are based on the result of running the same transactions over ethers.js
 
@@ -16,7 +17,7 @@ subtest 'no access list' => sub {
         gas_price => '0x4A817C800',
         gas_limit => '0x5208',
         to        => '0x3535353535353535353535353535353535353535',
-        value     => '0xDE0B6B3A7640000',
+        value     => parse_units('1', ETH),
         data      => '0x',
     );
 
@@ -29,9 +30,8 @@ subtest 'no access list' => sub {
 
     my $raw_transaction = $transaction->serialize;
 
-    is(unpack("H*", $raw_transaction),
-        '01f86e01808504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080c001a00cbb47e86ca4f83d9675eccb8ea3c7f1f4718ab998baa4083c3627353c293103a064eba85277a343804e99ee028783fe90d05b3994202a0b77c8b04fb089fbc07a'
-    );
+    is unpack("H*", $raw_transaction),
+        '01f86e01808504a817c800825208943535353535353535353535353535353535353535880de0b6b3a764000080c001a00cbb47e86ca4f83d9675eccb8ea3c7f1f4718ab998baa4083c3627353c293103a064eba85277a343804e99ee028783fe90d05b3994202a0b77c8b04fb089fbc07a';
 };
 
 subtest 'with access list' => sub {
@@ -65,9 +65,8 @@ subtest 'with access list' => sub {
 
     my $raw_transaction = $transaction->serialize;
 
-    is(unpack("H*", $raw_transaction),
-        '01f8fa01018504a817c80082c3509412345678901234567890123456789012345678908080f893f859941234567890123456789012345678901234567890f842a00000000000000000000000000000000000000000000000000000000000000001a00000000000000000000000000000000000000000000000000000000000000002f794abcdefabcdefabcdefabcdefabcdefabcdefabcde1a0000000000000000000000000000000000000000000000000000000000000000380a0d7244e5c53f061d5b93c91f8b87e8d92c597a2caa0566da54da00d02618445bda07f54f05993af2dcd5f6fe606eee54ef29f9223931af5924a67febf612f9e3446'
-    );
+    is unpack("H*", $raw_transaction),
+        '01f8fa01018504a817c80082c3509412345678901234567890123456789012345678908080f893f859941234567890123456789012345678901234567890f842a00000000000000000000000000000000000000000000000000000000000000001a00000000000000000000000000000000000000000000000000000000000000002f794abcdefabcdefabcdefabcdefabcdefabcdefabcde1a0000000000000000000000000000000000000000000000000000000000000000380a0d7244e5c53f061d5b93c91f8b87e8d92c597a2caa0566da54da00d02618445bda07f54f05993af2dcd5f6fe606eee54ef29f9223931af5924a67febf612f9e3446';
 };
 
 subtest 'access list encoding' => sub {
@@ -76,7 +75,7 @@ subtest 'access list encoding' => sub {
         gas_price   => '0x4A817C800',
         gas_limit   => '0x5208',
         to          => '0x3535353535353535353535353535353535353535',
-        value       => '0xDE0B6B3A7640000',
+        value       => parse_units('1', ETH),
         chain_id    => '0x1',
         data        => '0x',
         access_list => [{
@@ -96,7 +95,7 @@ subtest 'access list encoding' => sub {
                 '0x0000000000000000000000000000000000000000000000000000000000000002'
             ]]];
 
-    is_deeply($encoded, $expected, 'correct access list encoding');
+    is_deeply $encoded, $expected, 'correct access list encoding';
 
     # Test empty access list
     $tx = Blockchain::Ethereum::Transaction::EIP2930->new(
@@ -104,12 +103,12 @@ subtest 'access list encoding' => sub {
         gas_price => '0x4A817C800',
         gas_limit => '0x5208',
         to        => '0x3535353535353535353535353535353535353535',
-        value     => '0xDE0B6B3A7640000',
+        value     => parse_units('1', ETH),
         chain_id  => '0x1',
         data      => '0x',
     );
 
-    is_deeply($tx->_encode_access_list, [], 'correct empty access list encoding');
+    is_deeply $tx->_encode_access_list, [], 'correct empty access list encoding';
 };
 
 done_testing;

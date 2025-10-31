@@ -74,7 +74,7 @@ sub serialize {
         $self->data,
     );
 
-    @params = $self->_equalize_params(\@params)->@*;
+    @params = $self->_normalize_params(\@params)->@*;
 
     if ($self->v && $self->r && $self->s) {
         push(@params, $self->v, $self->r, $self->s);
