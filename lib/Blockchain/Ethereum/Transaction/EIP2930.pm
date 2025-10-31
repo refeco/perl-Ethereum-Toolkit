@@ -17,7 +17,7 @@ Transaction abstraction for EIP-2930 Access List transactions
         gas_price   => '0x4A817C800',
         gas_limit   => '0x5208',
         to          => '0x3535353535353535353535353535353535353535',
-        value       => '0xDE0B6B3A7640000',
+        value       => parse_unit('1', ETH),
         data        => '0x',
         chain_id    => '0x1',
         access_list => [
@@ -85,7 +85,7 @@ sub serialize {
     my @params =
         ($self->chain_id, $self->nonce, $self->gas_price, $self->gas_limit, $self->to, $self->value, $self->data, $self->_encode_access_list,);
 
-    @params = $self->_equalize_params(\@params)->@*;
+    @params = $self->_normalize_params(\@params)->@*;
 
     push(@params, $self->v, $self->r, $self->s)
         if $self->v && $self->r && $self->s;

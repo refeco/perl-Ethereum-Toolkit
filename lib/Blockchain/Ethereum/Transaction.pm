@@ -11,7 +11,6 @@ use warnings;
 =head1 SYNOPSIS
 
 Ethereum transaction abstraction for signing and generating raw transactions
-
     # parameters can be hexadecimal strings or Math::BigInt instances
     my $transaction = Blockchain::Ethereum::Transaction::EIP1559->new(
         nonce                    => '0x0',
@@ -19,7 +18,7 @@ Ethereum transaction abstraction for signing and generating raw transactions
         max_priority_fee_per_gas => '0x0',
         gas_limit                => '0x1DE2B9',
         to                       => '0x3535353535353535353535353535353535353535'
-        value                    => Math::BigInt->new('1000000000000000000'),
+        value                    => parse_unit('1', ETH),
         data                     => '0x',
         chain_id                 => '0x539'
     );
@@ -51,7 +50,7 @@ Supported transaction types:
 
 use Carp;
 use Crypt::Digest::Keccak256 qw(keccak256);
-use Scalar::Util             qw(blessed);
+use Scalar::Util             qw(blessed looks_like_number);
 
 use Blockchain::Ethereum::RLP;
 
@@ -159,11 +158,20 @@ sub hash {
     return keccak256($self->serialize);
 }
 
-# In case of Math::BigInt given for any params, get the hex value
-sub _equalize_params {
+# Hex conversion
+sub _normalize_params {
     my ($self, $params) = @_;
 
-    return [map { blessed $_ && $_->isa('Math::BigInt') ? $_->as_hex : $_ } $params->@*];
+    return [
+        map {
+            !defined $_
+                ? $_                                                                        # undefined
+                : blessed $_ && $_->isa('Math::BigInt')  ? $_->as_hex                       # BigInt
+                : /^0x/i                                 ? $_                               # hex string
+                : looks_like_number($_) && $_ == int($_) ? Math::BigInt->new($_)->as_hex    # integer/numeric string
+                : $_                                                                        # anything else
+        } @$params
+    ];
 }
 
 =method _encode_access_list

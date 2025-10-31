@@ -18,7 +18,7 @@ Transaction abstraction for EIP-1559 Fee Market transactions
         max_priority_fee_per_gas => '0x0',
         gas_limit                => '0x1DE2B9',
         to                       => '0x3535353535353535353535353535353535353535'
-        value                    => '0xDE0B6B3A7640000',
+        value                    => parse_unit('1', ETH),
         data                     => '0x',
         chain_id                 => '0x539',
         access_list => [
@@ -100,7 +100,7 @@ sub serialize {
         $self->_encode_access_list,
     );
 
-    @params = $self->_equalize_params(\@params)->@*;
+    @params = $self->_normalize_params(\@params)->@*;
 
     push(@params, $self->v, $self->r, $self->s)
         if $self->v && $self->r && $self->s;
