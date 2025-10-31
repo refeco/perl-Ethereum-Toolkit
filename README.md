@@ -4,7 +4,7 @@ Blockchain::Ethereum - A Ethereum toolkit in Perl
 
 # VERSION
 
-version 0.019
+version 0.020
 
 # DESCRIPTION
 
