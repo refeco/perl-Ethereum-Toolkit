@@ -53,8 +53,7 @@ sub new {
     $importer->import_key_raw($self->private_key, 'secp256k1');
 
     # Crypt::PK::ECC does not provide support for deterministic keys
-    $self->{ecc_handler} = bless Crypt::Perl::ECDSA::Parse::private($importer->export_key_der('private')),
-        'Blockchain::Ethereum::Key::PKUtil';
+    $self->{ecc_handler} = bless Crypt::Perl::ECDSA::Parse::private($importer->export_key_der('private')), 'Blockchain::Ethereum::Key::PKUtil';
 
     return $self;
 }
