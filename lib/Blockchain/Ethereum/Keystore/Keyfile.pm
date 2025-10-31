@@ -4,121 +4,187 @@ use v5.26;
 use strict;
 use warnings;
 
+# ABSTRACT: Ethereum keystore file abstraction
 # AUTHORITY
 # VERSION
 
-=head1 OVERVIEW
-
-This is an Ethereum keyfile abstraction that provides a way of change/read the
-keyfile information.
-
-Currently only supports version 3 keyfiles.
-
 =head1 SYNOPSIS
 
-...
+    use Blockchain::Ethereum::Keystore::Keyfile;
+    use Blockchain::Ethereum::Keystore::Key;
+
+    # Create a new keystore from a private key
+    my $private_key = Blockchain::Ethereum::Keystore::Key->new(
+        private_key => $key_bytes
+    );
+    
+    my $keystore = Blockchain::Ethereum::Keystore::Keyfile->new(
+        private_key => $private_key,
+        password    => 'my_secure_password'
+    );
+
+    # Save to file
+    $keystore->write_to_file('/path/to/keystore.json');
+
+    # Load from existing keystore file
+    my $loaded = Blockchain::Ethereum::Keystore::Keyfile->from_file(
+        '/path/to/keystore.json', 
+        'my_secure_password'
+    );
+
+    # Change password and save
+    $loaded->write_to_file('/path/to/new_keystore.json', 'new_password');
+
+    # Access keystore properties
+    my $private_key = $loaded->private_key;
+    my $address = $private_key->address;
+
+=head1 OVERVIEW
+
+This module provides a way to create, read, and write Ethereum keystore files (version 3).
+Ethereum keystores are encrypted JSON files that securely store private keys using 
+password-based encryption with scrypt key derivation and AES-128-CTR cipher.
+
+The module supports:
+
+=over 4
+
+=item * Creating new keystores from private keys
+
+=item * Loading existing keystore files
+
+=item * Password verification and changing
+
+=item * Proper MAC validation for security
+
+=back
 
 =cut
 
 use Carp;
 use File::Slurp;
-use JSON::MaybeXS qw(decode_json encode_json);
+use JSON::MaybeXS;
 use Crypt::PRNG;
 use Net::SSH::Perl::Cipher;
+use Crypt::Digest::Keccak256 qw(keccak256);
+use Scalar::Util             qw(blessed);
+use Data::UUID;
 
 use Blockchain::Ethereum::Keystore::Key;
 use Blockchain::Ethereum::Keystore::Keyfile::KDF;
+
+my $json = JSON::MaybeXS->new(
+    utf8      => 1,
+    pretty    => 1,
+    canonical => 1
+);
 
 sub new {
     my ($class, %params) = @_;
 
     my $self = bless {}, $class;
-    for (qw(cipher ciphertext mac version iv kdf id private_key)) {
+    for (qw(private_key password)) {
+        croak "Missing required parameter $_" unless defined $params{$_};
+
+        croak 'private_key must be a Blockchain::Ethereum::Keystore::Key instance'
+            if ($_ eq 'private_key' && !(blessed $params{$_} && $params{$_}->isa('Blockchain::Ethereum::Keystore::Key')));
+
         $self->{$_} = $params{$_} if exists $params{$_};
     }
+
+    $self->{mac} = $self->_generate_mac;
 
     return $self;
 }
 
+=method from_file
+
+Load a keystore from an existing file.
+
+    my $keystore = Blockchain::Ethereum::Keystore::Keyfile->from_file(
+        '/path/to/keystore.json',
+        'password'
+    );
+
+=over 4
+
+=item * C<file_path> - Path to the keystore JSON file (required)
+
+=item * C<password> - Password to decrypt the keystore (required)
+
+=back
+
+Returns a keystore object with the loaded private key and parameters.
+
+=cut
+
+sub from_file {
+    my ($class, $file_path, $password) = @_;
+
+    my $self = bless {}, $class;
+
+    my $content = read_file($file_path);
+    my $decoded = $json->decode(lc $content);
+
+    croak 'Version not supported'                        unless $decoded->{version} && $decoded->{version} == 3;
+    croak 'Password is required to decrypt the keystore' unless defined $password;
+    $self->{password} = $password;
+
+    return $self->_from_v3($decoded);
+}
+
 sub cipher {
-    shift->{cipher};
+    shift->{cipher} //= 'AES128_CTR';
 }
 
 sub ciphertext {
-    shift->{ciphertext};
+    my $self = shift;
+    $self->{ciphertext} //= $self->_generate_ciphertext;
 }
 
 sub mac {
-    shift->{mac};
+    my $self = shift;
+    $self->{mac} //= $self->_generate_mac;
+
 }
 
 sub version {
-    shift->{version};
+    shift->{version} //= 3;
 }
 
 sub iv {
-    shift->{iv};
+    my $self = shift;
+    $self->{iv} //= $self->_generate_random_iv;
 }
 
 sub kdf {
-    shift->{kdf};
+    my $self = shift;
+    $self->{kdf} //= $self->_generate_kdf;
 }
 
 sub id {
-    shift->{id};
+    my $self = shift;
+    $self->{id} //= $self->_generate_id;
 }
 
 sub private_key {
     shift->{private_key};
 }
 
-sub _json {
-    return shift->{json} //= JSON::MaybeXS->new(utf8 => 1);
-}
-
-=method import_file
-
-Import a keyfile (supports only version 3 as of now)
-
-=over 4
-
-=item * C<file_path> - string path for the keyfile
-
-=back
-
-self
-
-=cut
-
-sub import_file {
-    my ($self, $file_path, $password) = @_;
-
-    my $content = read_file($file_path);
-    my $decoded = $self->_json->decode(lc $content);
-
-    return $self->_from_object($decoded, $password);
-}
-
-sub _from_object {
-    my ($self, $object, $password) = @_;
-
-    my $version = $object->{version};
-
-    croak 'Version not supported' unless $version && $version == 3;
-
-    return $self->_from_v3($object, $password);
+sub password {
+    shift->{password};
 }
 
 sub _from_v3 {
-    my ($self, $object, $password) = @_;
+    my ($self, $object) = @_;
 
     my $crypto = $object->{crypto};
 
-    $self->{cipher}     = 'AES128_CTR';
     $self->{ciphertext} = $crypto->{ciphertext};
     $self->{mac}        = $crypto->{mac};
-    $self->{version}    = 3;
     $self->{iv}         = $crypto->{cipherparams}->{iv};
+    $self->{version}    = $object->{version};
+    $self->{id}         = $object->{id};
 
     my $header = $crypto->{kdfparams};
 
@@ -132,41 +198,40 @@ sub _from_v3 {
         prf       => $header->{prf},
         salt      => $header->{salt});
 
-    $self->{private_key} = $self->_private_key($password);
+    $self->{private_key} = $self->_generate_private_key unless $self->private_key;
+    $self->_verify_mac;
 
     return $self;
 }
 
-=method change_password
+sub _verify_mac {
+    my ($self) = @_;
 
-Change the imported keyfile password
+    my $computed_mac = $self->_generate_mac;
+    my $expected_mac = $self->mac;
 
-=over 4
-
-=item * C<old_password> - Current password for the keyfile
-
-=item * C<new_password> - New password to be set
-
-=back
-
-self
-
-=cut
-
-sub change_password {
-    my ($self, $old_password, $new_password) = @_;
-
-    return $self->import_key($self->_private_key($old_password), $new_password);
+    croak "Invalid password or corrupted keystore"
+        unless lc $computed_mac eq lc $expected_mac;
 }
 
-sub _private_key {
-    my ($self, $password) = @_;
+sub _generate_mac {
+    my ($self) = @_;
 
-    return $self->private_key if $self->private_key;
+    my $derived_key = $self->kdf->decode($self->password);
+    my $mac_key     = substr($derived_key, 16, 16);
+
+    return unpack "H*", keccak256($mac_key . pack("H*", $self->ciphertext));
+}
+
+sub _generate_private_key {
+    my ($self) = @_;
+
+    my $derived_key = $self->kdf->decode($self->password);
+    my $cipher_key  = substr($derived_key, 0, 16);
 
     my $cipher = Net::SSH::Perl::Cipher->new(
         $self->cipher,    #
-        $self->kdf->decode($password),
+        $cipher_key,
         pack("H*", $self->iv));
 
     my $key = $cipher->decrypt(pack("H*", $self->ciphertext));
@@ -174,55 +239,78 @@ sub _private_key {
     return Blockchain::Ethereum::Keystore::Key->new(private_key => $key);
 }
 
-=method import_key
+sub _generate_random_iv {
+    my $iv = Crypt::PRNG::random_bytes(16);
+    return unpack "H*", $iv;
+}
 
-Import a L<Blockchain::Ethereum::keystore::Key>
+sub _generate_kdf {
+    my ($self) = @_;
+
+    my ($derived_key, $salt, $N, $r, $p) = Crypt::ScryptKDF::_scrypt_extra($self->password);
+    return Blockchain::Ethereum::Keystore::Keyfile::KDF->new(
+        algorithm => 'scrypt',
+        dklen     => length $derived_key,
+        n         => $N,
+        p         => $p,
+        r         => $r,
+        salt      => unpack 'H*',
+        $salt
+    );
+}
+
+sub _generate_ciphertext {
+    my ($self) = @_;
+
+    my $derived_key = $self->kdf->decode($self->password);
+    my $cipher_key  = substr($derived_key, 0, 16);
+
+    my $cipher = Net::SSH::Perl::Cipher->new($self->cipher, $cipher_key, pack("H*", $self->iv),);
+
+    my $encrypted = $cipher->encrypt($self->private_key->export);
+    return unpack "H*", $encrypted;
+}
+
+sub _generate_id {
+    my $uuid = Data::UUID->new->create_str();
+    $uuid =~ s/-//g;    # Remove hyphens for Ethereum format
+    return lc($uuid);
+}
+
+=method write_to_file
+
+Write the keystore to a file, optionally with a new password.
+
+    # Write with current password
+    $keystore->write_to_file('/path/to/output.json');
+
+    # Write with new password
+    $keystore->write_to_file('/path/to/output.json', 'new_password');
 
 =over 4
 
-=item * C<keyfile> - L<Blockchain::Ethereum::Keystore::Key>
+=item * C<file_path> - Path where to save the keystore file (required)
+
+=item * C<password> - New password to encrypt with (optional)
 
 =back
 
-self
+If a new password is provided, the keystore will be re-encrypted with the new password
+while keeping the same private key.
+
+Returns true on success, throws an exception on failure.
 
 =cut
 
-sub import_key {
-    my ($self, $key, $password) = @_;
+sub write_to_file {
+    my ($self, $file_path, $password) = @_;
 
-    # use the internal method here otherwise would not be availble to get the kdf params
-    # salt if give will be the same as the response, if not will be auto generated by the library
-    my ($derived_key, $salt, $N, $r, $p);
-    ($derived_key, $salt, $N, $r, $p) = Crypt::ScryptKDF::_scrypt_extra($password);
-    $self->kdf->{algorithm} = "scrypt";
-    $self->kdf->{dklen}     = length $derived_key;
-    $self->kdf->{n}         = $N;
-    $self->kdf->{p}         = $p;
-    $self->kdf->{r}         = $r;
-    $self->kdf->{salt}      = unpack "H*", $salt;
+    if (defined $password && $self->password ne $password) {
+        $self->{password} = $password;
 
-    my $iv = Crypt::PRNG::random_bytes(16);
-    $self->{iv} = unpack "H*", $iv;
-
-    my $cipher = Net::SSH::Perl::Cipher->new(
-        "AES128_CTR",    #
-        $derived_key,
-        $iv
-    );
-
-    my $encrypted = $cipher->encrypt($key->export);
-    $self->{ciphertext} = unpack "H*", $encrypted;
-
-    $self->{private_key} = $key;
-
-    return $self;
-}
-
-sub _write_to_object {
-    my $self = shift;
-
-    croak "KDF algorithm and parameters are not set" unless $self->kdf;
+        # regenerate required fields for password change
+        delete $self->{$_} for qw(kdf iv ciphertext mac);
+    }
 
     my $file = {
         "crypto" => {
@@ -243,27 +331,7 @@ sub _write_to_object {
         "version" => 3
     };
 
-    return $file;
-}
-
-=method write_to_file
-
-Write the imported keyfile/private_key to a keyfile in the file system
-
-=over 4
-
-=item * C<file_path> - file path to save the data
-
-=back
-
-returns 1 upon successfully writing the file or undef if it encountered an error
-
-=cut
-
-sub write_to_file {
-    my ($self, $file_path) = @_;
-
-    return write_file($file_path, $self->_json->canonical(1)->pretty->encode($self->_write_to_object));
+    return write_file($file_path, $json->encode($file));
 }
 
 1;

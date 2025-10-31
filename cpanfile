@@ -5,6 +5,7 @@ requires "Bitcoin::Crypto" => "2.001";
 requires "Crypt::Perl" => "0.38";
 requires "Crypt::ScryptKDF" => "0.010";
 requires "CryptX" => "0.078";
+requires "Data::UUID" => "1.227";
 requires "File::Slurp" => "9999.32";
 requires "JSON::MaybeXS" => "1.004005";
 requires "Math::BigInt" => "1.999811";
@@ -14,6 +15,7 @@ requires "Scalar::Util" => "1.63";
 
 on 'test' => sub {
   requires "File::Spec" => "0";
+  requires "File::Temp" => "0.2312";
   requires "IO::Handle" => "0";
   requires "IPC::Open3" => "0";
   requires "Test::CheckDeps" => "0.010";
