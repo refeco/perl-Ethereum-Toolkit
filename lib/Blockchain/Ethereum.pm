@@ -8,10 +8,6 @@ use warnings;
 # AUTHORITY
 # VERSION
 
-=head1 NAME
-
-Blockchain::Ethereum::Toolkit - A Ethereum toolkit in Perl
-
 =head1 DESCRIPTION
 
 A Ethereum toolkit written in Perl, combining core utilities for working with Ethereum's internal data structures.

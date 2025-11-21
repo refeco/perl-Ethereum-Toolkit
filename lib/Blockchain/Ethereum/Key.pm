@@ -19,6 +19,7 @@ If instantiated without a private key, this module uses L<Crypt::PRNG> for the r
 Generate a new key:
 
     my $key = Blockchain::Ethereum::Key->new;
+    my $address = $key->address; # Blockchain::Ethereum::Address
     $key->sign_transaction($transaction); # Blockchain::Ethereum::Transaction
 
 Import existent key:
@@ -29,14 +30,11 @@ Import existent key:
 =cut
 
 use Carp;
-use Crypt::PK::ECC;
-use Crypt::Perl::ECDSA::Parse;
-use Crypt::Perl::ECDSA::Utils;
 use Crypt::Digest::Keccak256 qw(keccak256);
 use Crypt::PRNG              qw(random_bytes);
 use Scalar::Util             qw(blessed);
+use Bitcoin::Secp256k1;
 
-use Blockchain::Ethereum::Key::PKUtil;
 use Blockchain::Ethereum::Address;
 
 sub new {
@@ -48,12 +46,6 @@ sub new {
     } else {
         $self->{private_key} = random_bytes(32);
     }
-
-    my $importer = Crypt::PK::ECC->new();
-    $importer->import_key_raw($self->private_key, 'secp256k1');
-
-    # Crypt::PK::ECC does not provide support for deterministic keys
-    $self->{ecc_handler} = bless Crypt::Perl::ECDSA::Parse::private($importer->export_key_der('private')), 'Blockchain::Ethereum::Key::PKUtil';
 
     return $self;
 }
@@ -75,7 +67,7 @@ sub private_key {
 }
 
 sub _ecc_handler {
-    return shift->{ecc_handler};
+    return shift->{ecc_handler} //= Bitcoin::Secp256k1->new;
 }
 
 =method sign_transaction
@@ -98,13 +90,15 @@ sub sign_transaction {
     croak "transaction must be a reference of Blockchain::Ethereum::Transaction"
         unless blessed $transaction && $transaction->isa('Blockchain::Ethereum::Transaction');
 
-    # _sign is overriden by Blockchain::Ethereum::Key::PKUtil
-    # to include the y_parity as part of the response
-    my ($r, $s, $y_parity) = $self->_ecc_handler->_sign($transaction->hash);
+    my $result = $self->_ecc_handler->sign_digest_recoverable($self->private_key, $transaction->hash);
 
-    $transaction->set_r($r->as_hex);
-    $transaction->set_s($s->as_hex);
-    $transaction->generate_v($y_parity);
+    my $r           = substr($result->{signature}, 0,  32);
+    my $s           = substr($result->{signature}, 32, 32);
+    my $recovery_id = $result->{recovery_id};
+
+    $transaction->set_r(unpack "H*", $r);
+    $transaction->set_s(unpack "H*", $s);
+    $transaction->generate_v($recovery_id);
 
     return $transaction;
 }
@@ -124,11 +118,11 @@ L<Blockchain::Ethereum::Address>
 sub address {
     my $self = shift;
 
-    my ($x, $y) = Crypt::Perl::ECDSA::Utils::split_G_or_public($self->_ecc_handler->_decompress_public_point);
-
-    # address is the hash of the concatenated value of x and y
-    my $address     = substr(keccak256($x . $y), -20);
-    my $hex_address = unpack("H*", $address);
+    my $pubkey            = $self->_ecc_handler->create_public_key($self->private_key);
+    my $compressed_pubkey = $self->_ecc_handler->compress_public_key($pubkey, 0);
+    my $pubkey_64         = substr($compressed_pubkey,     1);    # remove 0x04 prefix
+    my $address           = substr(keccak256($pubkey_64), -20);
+    my $hex_address       = unpack("H*", $address);
 
     return Blockchain::Ethereum::Address->new(address => "0x$hex_address");
 }

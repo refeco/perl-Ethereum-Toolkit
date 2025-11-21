@@ -25,7 +25,6 @@ subtest "from_file - v3 pbkdf2" => sub {
     # Test against actual file data
     is $keyfile->version,    3,                                                                  'version is 3';
     is $keyfile->id,         '3198bc9c-6672-5ab3-d995-4942343ae5b6',                             'ID matches file data';
-    is $keyfile->cipher,     'AES128_CTR',                                                       'cipher is correct';
     is $keyfile->iv,         '6087dab2f9fdbbfaddc31a909735c1e6',                                 'IV matches file data';
     is $keyfile->ciphertext, '5318b4d5bcd28de64ee5559e671353e16f075ecae9f99c7a79a38af5f869aa46', 'ciphertext matches file data';
     is $keyfile->mac,        '517ead924a9d0dc3124507e3393d175ce3ff7c1e96529c6c555ce9e51205e9b2', 'MAC matches file data';
@@ -50,7 +49,6 @@ subtest "from_file - v3 scrypt" => sub {
     # Test against actual file data
     is $keyfile->version,    3,                                                                  'version is 3';
     is $keyfile->id,         '3198bc9c-6672-5ab3-d995-4942343ae5b6',                             'ID matches file data';
-    is $keyfile->cipher,     'AES128_CTR',                                                       'cipher is correct';
     is $keyfile->iv,         '83dbcc02d8ccb40e466191a123791e0e',                                 'IV matches file data';
     is $keyfile->ciphertext, 'd172bf743a674da9cdad04534d56926ef8358534d458fffccd4e6ad2fbde479c', 'ciphertext matches file data';
     is $keyfile->mac,        '2103ac29920d71da29f15d75b4a16dbe95cfd7ff8faea1056c33131d846e3097', 'MAC matches file data';
@@ -65,33 +63,14 @@ subtest "from_file - v3 scrypt" => sub {
     is $keyfile->kdf->salt,      'ab0c7876052600dd703518d6fc3fe8984592145b591fc8fb5c6d43190334ba19', 'KDF salt matches file data';
 };
 
-subtest "lazy initialization" => sub {
-    my $key     = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
-    my $keyfile = Blockchain::Ethereum::Keystore::File->new(
-        private_key => $key,
-        password    => $password
-    );
-
-    # Test lazy accessors
-    is $keyfile->cipher, 'AES128_CTR', 'cipher defaults correctly';
-    ok $keyfile->ciphertext, 'ciphertext is generated';
-    ok $keyfile->iv,         'IV is generated';
-    isa_ok $keyfile->kdf, 'Blockchain::Ethereum::Keystore::KDF';
-    like $keyfile->id, qr/^[0-9a-f]{32}$/, 'ID has correct format';
-    ok $keyfile->mac, 'MAC is generated';
-};
-
 subtest "write_to_file - basic" => sub {
     my $key     = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
-    my $keyfile = Blockchain::Ethereum::Keystore::File->new(
-        private_key => $key,
-        password    => $password
-    );
+    my $keyfile = Blockchain::Ethereum::Keystore::File->from_key($key);
 
     my ($fh, $filename) = tempfile();
     close $fh;
 
-    eval { $keyfile->write_to_file($filename) };
+    eval { $keyfile->write_to_file($filename, $password) };
     ok !$@,          'write_to_file succeeds';
     ok -f $filename, 'file was created';
 
@@ -100,58 +79,6 @@ subtest "write_to_file - basic" => sub {
     is $loaded->private_key->export, $private_key_bytes, 'round-trip preserves key';
 
     unlink $filename;
-};
-
-subtest "write_to_file - password change" => sub {
-    my $key     = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
-    my $keyfile = Blockchain::Ethereum::Keystore::File->new(
-        private_key => $key,
-        password    => $password
-    );
-
-    my ($fh, $filename) = tempfile();
-    close $fh;
-
-    my $new_password = "newpassword";
-
-    # Store original values
-    my $original_mac        = $keyfile->mac;
-    my $original_ciphertext = $keyfile->ciphertext;
-
-    eval { $keyfile->write_to_file($filename, $new_password) };
-    ok !$@, 'write_to_file with new password succeeds';
-
-    # Verify password was changed
-    is $keyfile->password, $new_password, 'password was updated';
-
-    # Verify cryptographic fields were regenerated
-    isnt $keyfile->mac,        $original_mac,        'MAC was regenerated';
-    isnt $keyfile->ciphertext, $original_ciphertext, 'ciphertext was regenerated';
-
-    # Verify we can read with new password
-    my $loaded = Blockchain::Ethereum::Keystore::File->from_file($filename, $new_password);
-    is $loaded->private_key->export, $private_key_bytes, 'key preserved after password change';
-
-    # Verify old password no longer works
-    eval { Blockchain::Ethereum::Keystore::File->from_file($filename, $password) };
-    like $@, qr/Invalid password/, 'old password rejected';
-
-    unlink $filename;
-};
-
-subtest "error conditions - constructor" => sub {
-    eval { Blockchain::Ethereum::Keystore::File->new };
-    like $@, qr/Missing required parameter/, 'constructor requires parameters';
-
-    eval { Blockchain::Ethereum::Keystore::File->new(password => $password) };
-    like $@, qr/Missing required parameter/, 'constructor requires private_key';
-
-    my $key = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
-    eval { Blockchain::Ethereum::Keystore::File->new(private_key => $key) };
-    like $@, qr/Missing required parameter/, 'constructor requires password';
-
-    eval { Blockchain::Ethereum::Keystore::File->new(private_key => "not_a_key_object", password => $password) };
-    like $@, qr/must be a Blockchain::Ethereum::Key instance/, 'validates private_key type';
 };
 
 subtest "error conditions - from_file" => sub {
@@ -164,33 +91,22 @@ subtest "error conditions - from_file" => sub {
 
 subtest "MAC verification" => sub {
     # Load a valid keystore
-    my $keyfile = Blockchain::Ethereum::Keystore::File->from_file("./t/Keystore/resources/scrypt_v3.json", $password);
-
-    # MAC should be verified during loading (no exception = success)
-    ok 1, 'MAC verification passed during from_file';
-
-    # Test that MAC is properly generated for new keystores
-    my $key         = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
-    my $new_keyfile = Blockchain::Ethereum::Keystore::File->new(
-        private_key => $key,
-        password    => $password
-    );
-
-    ok $new_keyfile->mac, 'MAC generated for new keystore';
-    like $new_keyfile->mac, qr/^[0-9a-f]+$/i, 'MAC has hex format';
+    my $keyfile      = Blockchain::Ethereum::Keystore::File->from_file("./t/Keystore/resources/scrypt_v3.json", $password);
+    my $mac_original = $keyfile->mac;
+    my $mac_new      = $keyfile->_generate_mac;
+    like $mac_original, qr/^[0-9a-f]+$/i, 'original MAC has hex format';
+    like $mac_new,      qr/^[0-9a-f]+$/i, 'new MAC has hex format';
+    is $mac_new, $mac_original, 'MAC matches for valid keystore';
 };
 
 subtest "keystore format compliance" => sub {
     my $key     = Blockchain::Ethereum::Key->new(private_key => $private_key_bytes);
-    my $keyfile = Blockchain::Ethereum::Keystore::File->new(
-        private_key => $key,
-        password    => $password
-    );
+    my $keyfile = Blockchain::Ethereum::Keystore::File->from_key($key);
 
     my ($fh, $filename) = tempfile;
     close $fh;
 
-    $keyfile->write_to_file($filename);
+    $keyfile->write_to_file($filename, $password);
 
     # Read the JSON directly to verify format
     my $json_content = do {

@@ -19,10 +19,6 @@ This distribution merges the functionality of previously separate modules into a
 
 These modules are now bundled together in a single distribution to simplify usage, packaging, and long-term maintenance.
 
-# NAME
-
-Blockchain::Ethereum::Toolkit - A Ethereum toolkit in Perl
-
 # INSTALLATION
 
 Install via CPAN:

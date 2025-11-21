@@ -62,10 +62,9 @@ The module supports:
 =cut
 
 use Carp;
-use File::Slurp;
 use JSON::MaybeXS;
 use Crypt::PRNG;
-use Net::SSH::Perl::Cipher;
+use Crypt::Mode::CTR;
 use Crypt::Digest::Keccak256 qw(keccak256);
 use Scalar::Util             qw(blessed);
 use Data::UUID;
@@ -79,21 +78,32 @@ my $json = JSON::MaybeXS->new(
     canonical => 1
 );
 
-sub new {
-    my ($class, %params) = @_;
+=method from_key
 
-    my $self = bless {}, $class;
-    for (qw(private_key password)) {
-        croak "Missing required parameter $_" unless defined $params{$_};
+Load a keystore from an existing private key.
 
-        croak 'private_key must be a Blockchain::Ethereum::Key instance'
-            if ($_ eq 'private_key' && !(blessed $params{$_} && $params{$_}->isa('Blockchain::Ethereum::Key')));
+    my $key = Blockchain::Ethereum::Key->new(
+        private_key => $key_bytes
+    );
+    my $keystore = Blockchain::Ethereum::Keystore::File->from_key($key);
 
-        $self->{$_} = $params{$_} if exists $params{$_};
-    }
+=over 4
 
-    $self->{mac} = $self->_generate_mac;
+=item * C<key> - A Blockchain::Ethereum::Key instance (required)
 
+=back
+
+Returns a keystore object with the loaded private key and parameters.
+
+=cut
+
+sub from_key {
+    my ($class, $key) = @_;
+
+    croak 'key must be a Blockchain::Ethereum::Key instance'
+        unless blessed $key && $key->isa('Blockchain::Ethereum::Key');
+
+    my $self = bless {private_key => $key}, $class;
     return $self;
 }
 
@@ -123,7 +133,14 @@ sub from_file {
 
     my $self = bless {}, $class;
 
-    my $content = read_file($file_path);
+    my $content;
+    {
+        open my $fh, '<:raw', $file_path
+            or croak "Could not read file '$file_path': $!";
+        local $/;    # Enable slurp mode
+        $content = <$fh>;
+        close $fh;
+    }
     my $decoded = $json->decode(lc $content);
 
     croak 'Version not supported'                        unless $decoded->{version} && $decoded->{version} == 3;
@@ -134,7 +151,7 @@ sub from_file {
 }
 
 sub cipher {
-    shift->{cipher} //= 'AES128_CTR';
+    shift->{cipher} //= Crypt::Mode::CTR->new('AES', 1);
 }
 
 sub ciphertext {
@@ -229,12 +246,7 @@ sub _generate_private_key {
     my $derived_key = $self->kdf->decode($self->password);
     my $cipher_key  = substr($derived_key, 0, 16);
 
-    my $cipher = Net::SSH::Perl::Cipher->new(
-        $self->cipher,    #
-        $cipher_key,
-        pack("H*", $self->iv));
-
-    my $key = $cipher->decrypt(pack("H*", $self->ciphertext));
+    my $key = $self->cipher->decrypt(pack("H*", $self->ciphertext), $cipher_key, pack("H*", $self->iv));
 
     return Blockchain::Ethereum::Key->new(private_key => $key);
 }
@@ -265,9 +277,7 @@ sub _generate_ciphertext {
     my $derived_key = $self->kdf->decode($self->password);
     my $cipher_key  = substr($derived_key, 0, 16);
 
-    my $cipher = Net::SSH::Perl::Cipher->new($self->cipher, $cipher_key, pack("H*", $self->iv),);
-
-    my $encrypted = $cipher->encrypt($self->private_key->export);
+    my $encrypted = $self->cipher->encrypt($self->private_key->export, $cipher_key, pack("H*", $self->iv));
     return unpack "H*", $encrypted;
 }
 
@@ -305,12 +315,15 @@ Returns true on success, throws an exception on failure.
 sub write_to_file {
     my ($self, $file_path, $password) = @_;
 
-    if (defined $password && $self->password ne $password) {
+    if ($password) {
         $self->{password} = $password;
 
         # regenerate required fields for password change
         delete $self->{$_} for qw(kdf iv ciphertext mac);
     }
+
+    croak 'Password is required to encrypt the keystore'
+        unless defined $self->password;
 
     my $file = {
         "crypto" => {
@@ -331,7 +344,12 @@ sub write_to_file {
         "version" => 3
     };
 
-    return write_file($file_path, $json->encode($file));
+    open my $fh, '>:raw', $file_path
+        or croak "Could not write to file '$file_path': $!";
+    print $fh $json->encode($file);
+    close $fh;
+
+    return 1;
 }
 
 1;
