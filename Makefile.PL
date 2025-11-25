@@ -35,7 +35,7 @@ my %WriteMakefileArgs = (
     "Test::CheckDeps" => "0.010",
     "Test::More" => "0.94"
   },
-  "VERSION" => "0.020",
+  "VERSION" => "0.021",
   "test" => {
     "TESTS" => "t/*.t t/ABI/*.t t/Keystore/*.t t/RLP/*.t t/Transaction/*.t"
   }

@@ -12,29 +12,37 @@ use warnings;
 
 A Ethereum toolkit written in Perl, combining core utilities for working with Ethereum's internal data structures.
 
-This distribution merges the functionality of previously separate modules into a single toolkit, including:
-
 =over 4
 
 =item *
 
-ABI encoding and decoding
+L<Blockchain::Ethereum::ABI> ABI (En/De)coding
 
 =item *
 
-RLP serialization
+L<Blockchain::Ethereum::RLP> RLP (De)Serialization
 
 =item *
 
-Transaction creation and signing
+L<Blockchain::Ethereum::Transaction> Ethereum Transaction Abstraction
 
-=item *
+=over 4
 
-Keystore encryption and decryption
+=item * L<Blockchain::Ethereum::Transaction::Legacy>  - Legacy Transaction
+
+=item * L<Blockchain::Ethereum::Transaction::EIP1559> - Fee Market Transaction
+
+=item * L<Blockchain::Ethereum::Transaction::EIP2930> - Optional Access Lists Transaction
+
+=item * L<Blockchain::Ethereum::Transaction::EIP4844> - Blob Transaction
 
 =back
 
-These modules are now bundled together in a single distribution to simplify usage, packaging, and long-term maintenance.
+=item *
+
+L<Blockchain::Ethereum::Keystore> Keystore File Abstraction (v3)
+
+=back
 
 =head1 INSTALLATION
 

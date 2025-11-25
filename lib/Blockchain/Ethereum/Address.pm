@@ -12,9 +12,11 @@ use warnings;
 
 Import an existing address:
 
-    my $address = Blockchain::Ethereum::Address->new(0x...);
+    my $address = Blockchain::Ethereum::Address->new('0x...');
     # print checksummed address
-    print $address;
+    print $address; # or $address->address if you want avoid stringification
+    # print no 0x prefix address
+    print $$address->no_prefix;
 
 Generate a new address:
 

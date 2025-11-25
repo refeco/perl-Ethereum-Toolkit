@@ -1,6 +1,8 @@
 {{$NEXT}}
+
+0.021     2025-11-25 00:06:01-03:00 America/Sao_Paulo
     [Improvements]
-    - Removed Crypt::Perl dependncy in favor of Bitcoin::Secp256k1
+    - Removed Crypt::Perl dependency in favor of Bitcoin::Secp256k1
     - Removed File::Slurp dependency in favor of core Perl functions
     - Removed Net::SSH::Perl dependency in favor of CryptX
     - [BREAKING] Blockchain::Ethereum::Keystore::Keyfile is now Blockchain::Ethereum::Keystore::File
